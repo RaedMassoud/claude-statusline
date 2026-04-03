@@ -82,7 +82,7 @@ VER_STR=""
 [ -n "$VERSION" ] && VER_STR=" ${CYAN}v${VERSION}${RESET}"
 echo -e "${CYAN}[$MODEL]${RESET}${VER_STR} 📁 ${DIR##*/}$BRANCH"
 COST_FMT=$(printf '$%.2f' "$COST")
-echo -e "${BAR_COLOR}${BAR}${RESET} ${PCT}% ctx | ${YELLOW}${COST_FMT}${RESET} | ⏱️ ${MINS}m ${SECS}s"
+echo -e "ctx ${BAR_COLOR}${BAR}${RESET} ${PCT}% | ${YELLOW}${COST_FMT}${RESET} | ⏱️ ${MINS}m ${SECS}s"
 
 if [ -n "$FIVE_H" ] || [ -n "$WEEK" ]; then
   RATE_LINE=""
@@ -93,7 +93,7 @@ if [ -n "$FIVE_H" ] || [ -n "$WEEK" ]; then
     FH_TIME=$(time_until "$FIVE_H_RESET")
     FH_TIME_STR=""
     [ -n "$FH_TIME" ] && FH_TIME_STR=" ⏳ ${FH_TIME}"
-    RATE_LINE="${FH_COLOR}${FH_BAR}${RESET} ${FH_PCT}% 5h${FH_TIME_STR}"
+    RATE_LINE="5h: ${FH_COLOR}${FH_BAR}${RESET} ${FH_PCT}%${FH_TIME_STR}"
   fi
   if [ -n "$WEEK" ]; then
     WK_BAR=$(make_bar "$WEEK")
@@ -102,8 +102,9 @@ if [ -n "$FIVE_H" ] || [ -n "$WEEK" ]; then
     WK_TIME=$(time_until_long "$WEEK_RESET")
     WK_TIME_STR=""
     [ -n "$WK_TIME" ] && WK_TIME_STR=" ⏳ ${WK_TIME}"
-    [ -n "$RATE_LINE" ] && RATE_LINE="$RATE_LINE | "
-    RATE_LINE="${RATE_LINE}${WK_COLOR}${WK_BAR}${RESET} ${WK_PCT}% 7d${WK_TIME_STR}"
+    [ -n "$RATE_LINE" ] && RATE_LINE="$RATE_LINE | 7d: "
+    [ -z "$RATE_LINE" ] && RATE_LINE="7d: "
+    RATE_LINE="${RATE_LINE}${WK_COLOR}${WK_BAR}${RESET} ${WK_PCT}%${WK_TIME_STR}"
   fi
-  echo -e "🔄 $RATE_LINE"
+  echo -e "$RATE_LINE"
 fi
