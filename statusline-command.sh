@@ -10,6 +10,7 @@ FIVE_H=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty'
 WEEK=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 FIVE_H_RESET=$(echo "$input" | jq -r '.rate_limits.five_hour.resets_at // empty')
 WEEK_RESET=$(echo "$input" | jq -r '.rate_limits.seven_day.resets_at // empty')
+VERSION=$(echo "$input" | jq -r '.version // empty')
 
 CYAN='\033[36m'; GREEN='\033[32m'; YELLOW='\033[33m'; RED='\033[31m'; RESET='\033[0m'
 
@@ -25,7 +26,12 @@ BAR="${FILL// /█}${PAD// /░}"
 MINS=$((DURATION_MS / 60000)); SECS=$(((DURATION_MS % 60000) / 1000))
 
 BRANCH=""
-git rev-parse --git-dir > /dev/null 2>&1 && BRANCH=" | 🌿 $(git branch --show-current 2>/dev/null)"
+if git rev-parse --git-dir > /dev/null 2>&1; then
+  BRANCH_NAME=$(git branch --show-current 2>/dev/null)
+  DIRTY=""
+  [ -n "$(git status --porcelain 2>/dev/null)" ] && DIRTY="*"
+  BRANCH=" | 🌿 ${BRANCH_NAME}${DIRTY}"
+fi
 
 # Helper: build a 10-char progress bar for a percentage value
 make_bar() {
@@ -72,7 +78,9 @@ time_until_long() {
   else echo "${m}m"; fi
 }
 
-echo -e "${CYAN}[$MODEL]${RESET} 📁 ${DIR##*/}$BRANCH"
+VER_STR=""
+[ -n "$VERSION" ] && VER_STR=" ${CYAN}v${VERSION}${RESET}"
+echo -e "${CYAN}[$MODEL]${RESET}${VER_STR} 📁 ${DIR##*/}$BRANCH"
 COST_FMT=$(printf '$%.2f' "$COST")
 echo -e "${BAR_COLOR}${BAR}${RESET} ${PCT}% ctx | ${YELLOW}${COST_FMT}${RESET} | ⏱️ ${MINS}m ${SECS}s"
 

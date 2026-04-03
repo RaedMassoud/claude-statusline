@@ -10,8 +10,9 @@ A custom statusline script for [Claude Code](https://claude.ai/code) that shows 
 
 **Line 1 — Session info**
 - Active model name (e.g. `claude-opus-4-6`)
+- Claude Code version (e.g. `v2.1.90`)
 - Current working directory
-- Current git branch (if inside a git repo)
+- Current git branch (if inside a git repo), with `*` when there are uncommitted changes
 
 **Line 2 — Usage**
 - Context window progress bar (green → yellow → red as it fills)
