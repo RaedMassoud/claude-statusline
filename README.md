@@ -1,84 +1,132 @@
 # Claude Code Statusline
 
-A custom statusline script for [Claude Code](https://claude.ai/code) that shows model info, context usage, cost, rate limits, and git branch — all color-coded directly in your terminal.
+A compact, color-coded statusline for [Claude Code](https://claude.ai/code). It
+shows your model and effort level, context-window usage, rate limits, and git
+branch, right at the bottom of your session.
 
-![screenshot](screenshot.png)
+Runs on Windows, macOS, and Linux with nothing to install. It is a single
+Node.js file, and Node ships with Claude Code, so there is no `jq`, no Homebrew,
+and no shell-specific setup.
 
----
+## What it looks like
 
-## What It Shows
+```
+Opus · xhigh   📁 claude-statusline   🌿 main*
+ctx ━───────── 8%
+5h ━━──────── 24% ⏳ 2h15m   7d ━━━━━━━━── 78% ⏳ 3d4h
+```
 
-**Line 1 — Session info**
-- Active model name (e.g. `claude-opus-4-6`)
-- Claude Code version (e.g. `v2.1.90`)
-- Current working directory
-- Current git branch (if inside a git repo), with `*` when there are uncommitted changes
+(Colors are not visible above. Bars run green below 70%, amber from 70 to 89%,
+and red at 90% and over.)
 
-**Line 2 — Usage**
-- Context window progress bar (green → yellow → red as it fills)
-- Context used percentage
-- Total session cost in USD
-- Elapsed session time
+## What it shows
 
-**Line 3 — Rate limits** *(only shown when data is available)*
-- 5-hour rate limit bar + percentage + time until reset
-- 7-day rate limit bar + percentage + time until reset
+Line 1, session:
+- Model name (for example, Opus)
+- Effort level (for example, xhigh), shown when the model reports one
+- Current directory
+- Git branch, with a trailing `*` when the working tree has uncommitted changes
 
----
+Line 2, context:
+- Context-window usage bar
+- Used percentage
+
+Line 3, rate limits (shown only when Claude Code provides them, which is on
+Pro and Max plans):
+- 5-hour bar, percentage, and time until reset
+- 7-day bar, percentage, and time until reset
+
+Any segment is skipped when its data is missing, so the line never shows blanks
+or `null`.
 
 ## Install
 
-### 1. Copy the script
+### 1. Save the script
+
+Save `statusline.js` into your Claude Code config directory, for example
+`~/.claude/statusline.js`.
 
 ```bash
-curl -o ~/.claude/statusline-command.sh \
-  https://raw.githubusercontent.com/AliT-Hammoud/claude-statusline/main/statusline-command.sh
-
-chmod +x ~/.claude/statusline-command.sh
+curl -o ~/.claude/statusline.js \
+  https://raw.githubusercontent.com/AliT-Hammoud/claude-statusline/main/statusline.js
 ```
 
-Or clone the repo and copy manually:
+Windows PowerShell:
+
+```powershell
+curl.exe -o "$env:USERPROFILE\.claude\statusline.js" `
+  https://raw.githubusercontent.com/AliT-Hammoud/claude-statusline/main/statusline.js
+```
+
+Or clone and copy:
 
 ```bash
 git clone https://github.com/AliT-Hammoud/claude-statusline.git
-cp claude-statusline/statusline-command.sh ~/.claude/statusline-command.sh
-chmod +x ~/.claude/statusline-command.sh
+cp claude-statusline/statusline.js ~/.claude/statusline.js
 ```
 
-### 2. Update `~/.claude/settings.json`
+### 2. Point Claude Code at it
 
-Add or update the `statusLine` key:
+Add a `statusLine` block to `~/.claude/settings.json`. Use an absolute path so
+it works no matter which shell runs the command:
 
 ```json
 {
   "statusLine": {
     "type": "command",
-    "command": "bash /Users/YOUR_USERNAME/.claude/statusline-command.sh"
+    "command": "node /Users/you/.claude/statusline.js",
+    "refreshInterval": 10
   }
 }
 ```
 
-Replace `YOUR_USERNAME` with your macOS username (run `whoami` to check).
+On Windows, use forward slashes (Node accepts them, so no backslash escaping):
+
+```json
+{
+  "statusLine": {
+    "type": "command",
+    "command": "node C:/Users/you/.claude/statusline.js",
+    "refreshInterval": 10
+  }
+}
+```
+
+`refreshInterval` re-runs the script every N seconds so the reset countdowns
+stay current while you are idle. The statusline is otherwise event-driven (it
+updates on new messages, `/compact`, and similar), so without it the countdowns
+freeze between actions. The minimum is `1`; remove the field to update on events
+only.
 
 ### 3. Restart Claude Code
 
-The statusline will appear at the bottom of your Claude Code session.
-
----
+The statusline appears at the bottom of your session.
 
 ## Requirements
 
-- macOS (uses `date +%s` for countdown timers)
-- `jq` installed — `brew install jq`
-- Claude Code CLI
+- Claude Code (it brings its own Node.js runtime)
+- git, only for the branch segment; it is skipped cleanly when absent
 
----
+If `node` is not on your PATH (some native installs keep it private), point the
+command at a full Node path. Find one with `which node` (macOS and Linux) or
+`where node` (Windows), then use it in place of `node` above.
 
 ## Customization
 
-The script uses standard ANSI colors. You can adjust thresholds in the `rate_color()` and context bar logic:
+Colors and thresholds live near the top of `statusline.js`. For example, to warn
+earlier, lower the amber threshold in `barColor()`:
+
+```js
+if (pct >= 60) return 'amber';
+```
+
+`BAR_WIDTH` sets the bar length. Set `NO_COLOR=1` in your environment to turn
+colors off.
+
+## Tests
+
+The behavior is covered by a dependency-free test suite. Run it with:
 
 ```bash
-# Change warning threshold from 70% to 60%:
-elif [ "$val" -ge 60 ]; then echo "$YELLOW"
+node --test
 ```
